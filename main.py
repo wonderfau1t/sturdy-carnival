@@ -160,15 +160,7 @@ def main():
 
     while True:
         with lock:
-            print(f"\nORDERS:\n10 sec: {last_order_price_10sec} ({change_order_10sec:.2f}%), "
-                  f"30 sec: {last_order_price_30sec} ({change_order_30sec:.2f}%), "
-                  f"1 min: {last_order_price_1min} ({change_order_1min:.2f}%), "
-                  f"5 min: {last_order_price_5min} ({change_order_5min:.2f}%)\nTRADES:\n"
-                  f"10 sec: {last_trade_price_10sec} ({change_trade_10sec:.2f}%), "
-                  f"30 sec: {last_trade_price_30sec} ({change_trade_30sec:.2f}%), "
-                  f"1 min: {last_trade_price_1min} ({change_trade_1min:.2f}%), "
-                  f"5 min: {last_trade_price_5min} ({change_trade_5min:.2f}%)"
-                  )
+            print('still working...')
         time.sleep(5)
 
 
