@@ -79,7 +79,7 @@ def fetch_trade_price(interval, storage_var_name, change_var_name):
                         change = ((current_price - previous_price) / previous_price) * 100
                     else:
                         change = 0
-                    if abs(change) >= 0.5:
+                    if abs(change) >= 0.01:
                         message = (
                             f"🔔 <b>Изменение курса!</b>\n"
                             f"Обнаружено по: {'стакану' if 'order' in change_var_name else 'сделкам'}\n"
@@ -121,7 +121,7 @@ def fetch_order_price(interval, storage_var_name, change_var_name):
                         change = ((current_price - previous_price) / previous_price) * 100
                     else:
                         change = 0
-                    if abs(change) >= 0.5:
+                    if abs(change) >= 0.01:
                         message = (
                             f"🔔 <b>Изменение курса!</b>\n"
                             f"Обнаружено по: {'стакану' if 'order' in change_var_name else 'сделкам'}\n"
