@@ -27,7 +27,6 @@ change_trade_5min = 0
 
 lock = threading.Lock()
 
-
 TELEGRAM_BOT_TOKEN = '7663401015:AAEnpvk5PoMw1KXGWXnehfZUlvZ_PvPG7aE'
 TELEGRAM_CHAT_IDS = ['717664582', '508884173']
 
@@ -42,8 +41,26 @@ mapper = {
     'change_trade_5min': '5 минут',
 }
 
+last_notification_time = {}
 
-def send_telegram_notification(message):
+
+def send_telegram_notification(message, change_var_name):
+    now = time.time()
+    smaller_intervals = {
+        '10sec': [],
+        '30sec': ['10sec'],
+        '1min': ['10sec', '30sec'],
+        '5min': ['10sec', '30sec', '1min'],
+    }
+    current_interval = [key for key in smaller_intervals.keys() if key in change_var_name][0]
+    for smaller_interval in smaller_intervals[current_interval]:
+        if last_notification_time.get(f"change_order_{smaller_interval}") or \
+           last_notification_time.get(f"change_trade_{smaller_interval}"):
+            # Уведомление за меньший интервал уже отправлено
+            return
+
+    # Отправляем уведомление и обновляем время последнего отправления
+    last_notification_time[change_var_name] = now
     url = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage'
     for chat_id in TELEGRAM_CHAT_IDS:
         payload = {
@@ -55,6 +72,7 @@ def send_telegram_notification(message):
         if response.status_code != 200:
             print(f"Ошибка при отправке в Telegram: {response.text}")
 
+
 def fetch_trade_price(interval, storage_var_name, change_var_name):
     global last_trade_price_10sec, last_trade_price_30sec, last_trade_price_1min, last_trade_price_5min
     global change_trade_10sec, change_trade_30sec, change_trade_1min, change_trade_5min
@@ -64,16 +82,12 @@ def fetch_trade_price(interval, storage_var_name, change_var_name):
     while True:
         try:
             method = 'trades'
-            params = {
-                'symbol': 'FTNUSDT',
-                'limit': 1,
-            }
+            params = {'symbol': 'FTNUSDT', 'limit': 1}
             response = requests.get(api_url + method, params)
             response.raise_for_status()
             trade = response.json()[0]
             if trade:
                 current_price = float(trade['price'])
-
                 with lock:
                     if previous_price:
                         change = ((current_price - previous_price) / previous_price) * 100
@@ -86,12 +100,10 @@ def fetch_trade_price(interval, storage_var_name, change_var_name):
                             f"Временной промежуток: <i>{mapper[change_var_name]}</i>\n"
                             f"Изменение: <b>{change:.2f}%</b>\n"
                         )
-                        send_telegram_notification(message)
+                        send_telegram_notification(message, change_var_name)
                     globals()[storage_var_name] = current_price
                     globals()[change_var_name] = change
-
                 previous_price = current_price
-                print(f"Updated {storage_var_name}: {current_price}, Change: {change:.2f}%")
         except Exception as e:
             print(f"Error fetching price for {storage_var_name}: {e}")
         time.sleep(interval)
@@ -106,16 +118,12 @@ def fetch_order_price(interval, storage_var_name, change_var_name):
     while True:
         try:
             method = 'depth'
-            params = {
-                'symbol': 'FTNUSDT',
-                'limit': 1,
-            }
+            params = {'symbol': 'FTNUSDT', 'limit': 1}
             response = requests.get(api_url + method, params)
             response.raise_for_status()
             bids = response.json().get('bids')
             if bids:
                 current_price = float(bids[0][0])
-
                 with lock:
                     if previous_price:
                         change = ((current_price - previous_price) / previous_price) * 100
@@ -128,12 +136,10 @@ def fetch_order_price(interval, storage_var_name, change_var_name):
                             f"Временной промежуток: <i>{mapper[change_var_name]}</i>\n"
                             f"Изменение: <b>{change:.2f}%</b>\n"
                         )
-                        send_telegram_notification(message)
+                        send_telegram_notification(message, change_var_name)
                     globals()[storage_var_name] = current_price
                     globals()[change_var_name] = change
-
                 previous_price = current_price
-                print(f"Updated {storage_var_name}: {current_price}, Change: {change:.2f}%")
         except Exception as e:
             print(f"Error fetching price for {storage_var_name}: {e}")
         time.sleep(interval)
